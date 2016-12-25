@@ -15,23 +15,12 @@ Private Sub Class_Initialize()
     Asm = False
 End Sub
     
-Public Sub ResetPart()
-    Dim counter As Integer
-    itemNumber = ""
-    partPath = ""
-    partDescription = ""
-    Standard = False
-    Asm = False
-    For counter = 1 To partNames.Count - 1
-        partNames.Remove (counter)
-    Next counter
-    For counter = 1 To partCount.Count - 1
-        partCount.Remove (counter)
-    Next counter
-End Sub
-    
-Sub SetStandardPart(isStandard As Boolean)
-    Standard = isStandard
+Sub SetStandardPart(cellText As String)
+    If (cellText = "Yes") Or (cellText = "Äà") Then
+        Standard = True
+    Else
+        Standard = False
+    End If
 End Sub
     
 Function isStandard() As Boolean
@@ -48,25 +37,23 @@ End Function
     
 Sub SetItemNumber(item As String)
     itemNumber = item
-    'DEBUGGING
-    'Debug.Print "ItemNumber: " & itemNumber
-    'END_DEBUGGING
 End Sub
     
 Function GetItemNumber() As String
     GetItemNumber = itemNumber
-    'DEBUGGING
-    'Debug.Print "ItemNumber: " & itemNumber
-    'END_DEBUGGING
     Exit Function
 End Function
     
 Sub AddPartNames(newPartName As String)
-    partNames.Add newPartName
+    If (partNames.Count = 0) Then
+        partNames.Add (newPartName)
+    ElseIf (partNames.item(partNames.Count) <> newPartName) Then
+        partNames.Add newPartName
+    End If
 End Sub
     
-Sub SetPartDescription(swModel As SldWorks.ModelDoc2, swApp As SldWorks.SldWorks)
-        
+Sub SetPartDescription(partDes As String)
+        partDescription = partDes
 End Sub
     
 Function GetPartDescription() As String
@@ -84,27 +71,45 @@ Function GetNamesCount() As Integer
     Exit Function
 End Function
     
-Sub SetPartCount(pCount As Integer, asmConfigName As String, asmPartName As String)
+Sub SetPartCount(pCount As Integer, asmConfigNumber As Integer, asmPartName As String)
     On Error Resume Next
-    partCount.Add pCount, asmConfigName + asmPartName
-    'DEBUGGING
-    'Debug.Print "Count: " & pCount & " Key: " & asmConfigName & asmPartName
-    'END_DEBUGGING
+        If (HasKey(partCount, CStr(asmConfigNumber) + asmPartName)) Then
+            pCount = pCount + partCount.item(CStr(asmConfigNumber) + asmPartName)
+            partCount.Remove (CStr(asmConfigNumber) + asmPartName)
+            partCount.Add pCount, CStr(asmConfigNumber) + asmPartName
+        Else
+            partCount.Add pCount, CStr(asmConfigNumber) + asmPartName
+        End If
     On Error GoTo 0
 End Sub
+
+Function HasKey(collectionObject As Collection, collectionKey As String) As Boolean
+    Dim var As Variant
+    On Error Resume Next
+    var = collectionObject(collectionKey)
+    HasKey = (Err.Number = 0)
+    Err.Clear
+End Function
         
 Function GetPartCount()
 
 End Function
 
-'DEBUGGING
-Sub PrintInfoInDebug()
+Sub PrintInfoInDebug(configurationNames As Variant)
     Dim i As Integer
+    Dim k As Integer
     
     Debug.Print "PART Item Number: " & itemNumber
+    Debug.Print "DESCRIPTION: " & partDescription
+    Debug.Print "IS STANDARD: " & Standard
+    Debug.Print "IS ASSEMBLY: " & Asm
     For i = 1 To partNames.Count
         Debug.Print "PART " & itemNumber & " PartName: " & partNames.item(i)
     Next
+    
+    For i = 1 To partNames.Count
+        For k = 0 To UBound(configurationNames)
+            Debug.Print "PART " & itemNumber & " COUNT: " & partCount.item(CStr(k) + partNames(i)) & " with partname " & partNames(i) & " in configuration " & configurationNames(k)
+        Next
+    Next
 End Sub
-'END_DEBUGGING
-

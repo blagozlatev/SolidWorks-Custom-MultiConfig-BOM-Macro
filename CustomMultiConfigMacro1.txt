@@ -8,28 +8,34 @@ Dim swView As SldWorks.View
 Dim swFeat As SldWorks.Feature
 
 Dim configurationNames As Variant
-Dim collectionPartInfo As New Collection
-Dim Part As CustomPartInfo
+Dim collectionPartInfo As Collection
 
-Sub setAsm(vComponents As Variant, Part As CustomPartInfo)
-    If (Not IsEmpty(vComponents)) Then
-        Dim counter As Integer
-        Dim swComponent As Object
+Function setIsAsm(vPathNames As Variant) As Boolean
+    If (Not IsEmpty(vPathNames)) Then
+        Dim i As Integer
+        Dim swPathName As String
                             
-        For counter = 0 To UBound(vComponents)
-            Set swComponent = vComponents(counter)
-            If Not swComponent Is Nothing Then
-                'DEBUGGING
-                'Debug.Print "PartEnding = " & Right(swComponent.GetPathName, 3)
-                'END_DEBUGGING
-                                    
-                If (Right(swComponent.GetPathName, 3) = "ASM") Then
-                    Part.SetAsmPart (True)
-                End If
+        For i = 0 To UBound(vPathNames)
+            If (Right(vPathNames(i), 3) = "ASM") Then
+                setIsAsm = True
+                Exit Function
             End If
         Next
     End If
-End Sub
+    setIsAsm = False
+    Exit Function
+End Function
+
+Function setTblAnnotationCustomBomProperties(bomTblAnn As SldWorks.BomTableAnnotation) As SldWorks.TableAnnotation
+    Dim swTblAnn As SldWorks.TableAnnotation
+    Set swTblAnn = bomTblAnn
+    
+    swTblAnn.InsertColumn2 swTableItemInsertPosition_Before, 2, "Îïèñàíèå", swInsertColumn_DefaultWidth
+    bomTblAnn.SetColumnCustomProperty 2, "Îïèñàíèå"
+    bomTblAnn.SetColumnCustomProperty 3, "Ñòàíäàðòåí äåòàéë"
+    
+    Set setTblAnnotationCustomBomProperties = swTblAnn
+End Function
 
 Function setBomTableAnnotation(sView As SldWorks.View) As SldWorks.BomTableAnnotation
     Dim bomTblAnnotation As SldWorks.BomTableAnnotation
@@ -45,19 +51,76 @@ Function setBomTableAnnotation(sView As SldWorks.View) As SldWorks.BomTableAnnot
     Exit Function
 End Function
 
+Function getPartInfo(swTblAnnotation As SldWorks.TableAnnotation, bomTblAnnotation As SldWorks.BomTableAnnotation) As Collection
+    Dim PartInfo As New Collection
+    Dim Part As CustomPartInfo
+    Dim PathNames As Variant
+    
+    Dim itemNumber As String
+    Dim partNumber As String
+    
+    Dim lowestItemNumber As String
+    Dim i As Integer
+    Dim j As Integer
+    Dim k As Integer
+    Dim itemNumberForChecking As String
+    
+    lowestItemNumber = "0"
+    itemNumber = "1"
+        
+    Set Part = New CustomPartInfo
+    For i = 0 To swTblAnnotation.RowCount - 1
+        bomTblAnnotation.GetModelPathNames i, itemNumber, partNumber
+        If (lowestItemNumber < itemNumber) Then
+            If (i > 1) Then
+                Part.SetItemNumber (lowestItemNumber)
+                Part.SetAsmPart (setIsAsm(bomTblAnnotation.GetModelPathNames(i - 1, itemNumberForChecking, partNumber)))
+                Part.SetPartDescription (swTblAnnotation.DisplayedText(i - 1, 2))
+                Part.SetStandardPart (swTblAnnotation.DisplayedText(i - 1, 3))
+                PartInfo.Add Part
+                Set Part = New CustomPartInfo
+            End If
+            
+            lowestItemNumber = itemNumber
+                                
+            For j = i To swTblAnnotation.RowCount - 1
+                bomTblAnnotation.GetModelPathNames j, itemNumberForChecking, partNumber
+                If (lowestItemNumber <> itemNumberForChecking) Then
+                    Exit For
+                End If
+                
+                Part.AddPartNames (partNumber)
+                For k = 0 To UBound(configurationNames)
+                        Dim x As Integer
+                        x = bomTblAnnotation.GetComponentsCount2(j, configurationNames(k), itemNumberForChecking, partNumber)
+                        Part.SetPartCount x, k, partNumber
+                Next k
+            Next j
+        End If
+    Next i
+    
+    Part.SetItemNumber (lowestItemNumber)
+    Part.SetAsmPart (setIsAsm(bomTblAnnotation.GetModelPathNames(i - 1, itemNumber, partNumber)))
+    Part.SetPartDescription (swTblAnnotation.DisplayedText(i - 1, 2))
+    Part.SetStandardPart (swTblAnnotation.DisplayedText(i - 1, 3))
+    PartInfo.Add Part
+    
+    Set getPartInfo = PartInfo
+    Exit Function
+End Function
+
 Sub main()
     Set swApp = Application.SldWorks
     Set swModel = swApp.ActiveDoc
     Set swDraw = swModel
-    
-    
+        
     Dim drawingPath As String
     Dim asmPath As String
     Dim index As Long
+    
+    Dim collectionPartInfo As Collection
     Dim swTblAnnotation As SldWorks.TableAnnotation
-    Dim itemNumber As String
-    Dim lowestItemNumber As String
-    Dim partNumber As String
+    Dim i As Integer
     
     If Not swModel Is Nothing Then
         drawingPath = swModel.GetPathName
@@ -86,86 +149,15 @@ Sub main()
             
     Dim bomTblAnnotation As SldWorks.BomTableAnnotation
     Set bomTblAnnotation = setBomTableAnnotation(swView)
-    Set swTblAnnotation = bomTblAnnotation
+    Set swTblAnnotation = setTblAnnotationCustomBomProperties(bomTblAnnotation)
             
-    lowestItemNumber = "0"
-    itemNumber = "1"
-        
-    Dim i As Integer
-    Dim j As Integer
-    Dim k As Integer
-    Dim itemNumberForChecking As String
-        
-    'DEBUGGING
-    'Debug.Print "ConfigName: " & configurationNames(index)
-    'Debug.Print "View: " & swView.GetName2
-    'Debug.Print "Count: " & bomTblAnnotation.GetComponentsCount2(1, configurationNames(1), itemNumber, partNumber)
-    'Debug.Print "Table Columns: " & swTblAnnotation.ColumnCount & " Table Rows: " & swTblAnnotation.RowCount
-    'END_DEBUGGING
-                                    
-                                    
-    'DEBUGGING
-    'Debug.Print "--------------------------" & configurationNames(i) & "--------------------------"
-    'END_DEBUGGING
-
-    Set Part = New CustomPartInfo
-    For i = 0 To swTblAnnotation.RowCount - 1
-        bomTblAnnotation.GetModelPathNames i, itemNumber, partNumber
-        'DEBUGGING
-        'Debug.Print "I: " & i & " itemNumber: " & itemNumber & " PartNumber: " & partNumber
-        'END_DEBUGGING
-        If (lowestItemNumber < itemNumber) Then
-            lowestItemNumber = itemNumber
-            'DEBUGGING
-            'Debug.Print "--------I: " & i & " itemNumber: " & itemNumber & " PartNumber: " & partNumber
-            'END_DEBUGGING
-            If (i > 1) Then
-                collectionPartInfo.Add Part
-                'DEBUGGING
-                'Debug.Print "Part Added: " & Part.GetItemNumber & " KEY: " & itemNumber
-                'END_DEBUGGING
-                Set Part = New CustomPartInfo
-            End If
-                    
-            For j = i To swTblAnnotation.RowCount - 1
-                bomTblAnnotation.GetModelPathNames j, itemNumberForChecking, partNumber
-                If (lowestItemNumber <> itemNumberForChecking) Then
-                    Exit For
-                End If
-                Part.SetItemNumber (itemNumberForChecking)
-                Part.AddPartNames (partNumber)
-                
-                For k = 0 To UBound(configurationNames)
-                        Dim x As Integer
-                        x = bomTblAnnotation.GetComponentsCount2(j, configurationNames(k), itemNumberForChecking, partNumber)
-                        Part.SetPartCount x, CStr(configurationNames(k)), partNumber
-                Next k
-                'DEBUGGING
-                'Debug.Print "Part Count: " & x & " ItemNumber: " & itemNumber & " PartNumber: " & partNumber
-                'END_DEBUGGING
-            Next j
-            'DEBUGGING
-            'Debug.Print "I: " & i & " LOWEST ITEM NUMBER: " & lowestItemNumber
-            'END_DEBUGGING
-        End If
-    Next i
-    
-    On Error Resume Next
-        collectionPartInfo.Add Part
-        'DEBUGGING
-        Debug.Print "Part Added: " & Part.GetItemNumber & " KEY: " & itemNumber
-    On Error GoTo 0
+    Set collectionPartInfo = getPartInfo(swTblAnnotation, bomTblAnnotation)
         
     For i = 1 To collectionPartInfo.Count
-        'DEBUGGING
         Debug.Print "--------------------------PART " & i & "--------------------------"
-        collectionPartInfo(i).PrintInfoInDebug
-        'END_DEBUGGING
+        collectionPartInfo(i).PrintInfoInDebug (configurationNames)
     Next
     
-    Dim swFeat As SldWorks.Feature
-    Dim swBomFeat As SldWorks.BomFeature
-    Set swTblAnnotation = bomTblAnnotation
     swModel.ForceRebuild3 (True)
 End Sub
 
