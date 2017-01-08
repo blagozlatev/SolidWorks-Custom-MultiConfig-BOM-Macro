@@ -1,0 +1,175 @@
+'Author: Blagovest Zlatev
+Dim itemNumber As String
+Dim partNames As New Collection
+Dim vPartNames As Variant
+Dim partCount As New Collection
+Dim partDescription As String
+Dim Standard As Boolean
+Dim Asm As Boolean
+    
+    
+Private Sub Class_Initialize()
+    itemNumber = ""
+    partPath = ""
+    partDescription = ""
+    ReDim vPartNames(1)
+    Standard = False
+    Asm = False
+End Sub
+    
+Sub SetStandardPart(cellText As String)
+    If (cellText = "Yes") Or (cellText = "Aa") Then
+        Standard = True
+    Else
+        Standard = False
+    End If
+End Sub
+    
+Function isStandard() As Boolean
+    isStandard = Standard
+End Function
+    
+Sub SetAsmPart(isAsm As Boolean)
+    Asm = isAsm
+End Sub
+    
+Function isAsm() As Boolean
+    isAsm = Asm
+End Function
+    
+Sub SetItemNumber(item As String)
+    itemNumber = item
+End Sub
+    
+Function GetItemNumber() As String
+    GetItemNumber = itemNumber
+    Exit Function
+End Function
+    
+Function GetPartName(Index As Integer) As String
+    GetPartName = vPartNames(Index)
+    Exit Function
+End Function
+
+Sub AddPartNames(newPartName As String)
+    If (partNames.count = 0) Then
+        partNames.Add (newPartName)
+    ElseIf (partNames.item(partNames.count) <> newPartName) Then
+        partNames.Add newPartName
+    End If
+End Sub
+    
+Sub SetPartDescription(partDes As String)
+        partDescription = partDes
+End Sub
+    
+Function GetPartDescription() As String
+    If partDescription <> "" Then
+        GetPartDescription = partDescription
+        Exit Function
+    End If
+End Function
+    
+Function GetNamesCount() As Integer
+    GetNamesCount = UBound(vPartNames)
+    Exit Function
+End Function
+    
+Sub SetPartCount(pCount As Integer, asmConfigNumber As Integer, asmPartName As String)
+    On Error Resume Next
+        If (HasKey(partCount, CStr(asmConfigNumber) + asmPartName)) Then
+            pCount = pCount + partCount.item(CStr(asmConfigNumber) + asmPartName)
+            partCount.Remove (CStr(asmConfigNumber) + asmPartName)
+            partCount.Add pCount, CStr(asmConfigNumber) + asmPartName
+        ElseIf pCount > 0 Then
+            partCount.Add pCount, CStr(asmConfigNumber) + asmPartName
+        End If
+    On Error GoTo 0
+End Sub
+
+Private Function HasKey(collectionObject As Collection, collectionKey As String) As Boolean
+    Dim var As Variant
+    On Error Resume Next
+    var = collectionObject(collectionKey)
+    HasKey = (Err.Number = 0)
+    Err.Clear
+End Function
+        
+Sub SortPartNamesAndSetNameVariant()
+    Dim i As Integer
+    ReDim vPartNames(partNames.count)
+    Set partNames = sortCollection(partNames)
+    For i = 1 To partNames.count
+        vPartNames(i - 1) = partNames.item(i)
+    Next
+    
+    For i = partNames.count To 1 Step -1
+        partNames.Remove (i)
+    Next i
+End Sub
+        
+Function GetPartCount(collectionKey As String) As Integer
+    If HasKey(partCount, collectionKey) Then
+        GetPartCount = partCount(collectionKey)
+        Exit Function
+    End If
+End Function
+
+Private Function sortCollection(ByVal c As Collection) As Collection
+    Dim n As Long: n = c.count
+    If n = 0 Then Set sortCollection = New Collection: Exit Function
+    ReDim Index(0 To n - 1) As Long
+    Dim i As Long, m As Long
+    For i = 0 To n - 1: Index(i) = i + 1: Next
+    For i = n \ 2 - 1 To 0 Step -1
+        heapify c, Index, i, n
+    Next
+    For m = n To 2 Step -1
+        exchange Index, 0, m - 1
+        heapify c, Index, 0, m - 1
+    Next
+    Dim c2 As New Collection
+    For i = 0 To n - 1: c2.Add c.item(Index(i)): Next
+    Set sortCollection = c2
+End Function
+
+Private Sub heapify(ByVal c As Collection, Index() As Long, ByVal i1 As Long, ByVal n As Long)
+    Dim nDiv2 As Long: nDiv2 = n \ 2
+    Dim i As Long: i = i1
+    Do While i < nDiv2
+        Dim k As Long: k = 2 * i + 1
+        If k + 1 < n Then
+            If c.item(Index(k)) < c.item(Index(k + 1)) Then k = k + 1
+        End If
+        If c.item(Index(i)) >= c.item(Index(k)) Then Exit Do
+        exchange Index, i, k
+        i = k
+    Loop
+End Sub
+
+Private Sub exchange(Index() As Long, ByVal i As Long, ByVal j As Long)
+    Dim Temp As Long: Temp = Index(i)
+    Index(i) = Index(j)
+    Index(j) = Temp
+End Sub
+
+Sub PrintInfoInDebug(configurationNames As Variant)
+    Dim i As Integer
+    Dim k As Integer
+    
+    Debug.Print "PART Item Number: " & itemNumberd
+    Debug.Print "DESCRIPTION: " & partDescription
+    Debug.Print "IS STANDARD: " & Standard
+    Debug.Print "IS ASSEMBLY: " & Asm
+    For i = 1 To partNames.count
+        Debug.Print "PART " & itemNumber & " PartName: " & partNames.item(i)
+    Next
+    
+    For i = 0 To UBound(vPartNames)
+        For k = 0 To UBound(configurationNames)
+            Debug.Print "PART " & itemNumber & " COUNT: " & partCount.item(CStr(k) + vPartNames(i)) & " with partname " & partNames(i) & " in configuration " & configurationNames(k)
+        Next
+    Next
+End Sub
+
+

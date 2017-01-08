@@ -1,0 +1,76 @@
+'Author: Blagovest Zlatev
+Dim asmName As String
+Dim asmDescription As String
+Dim asmRevision As String
+Dim asmDevelopedBy As String
+Dim asmCheckedBy As String
+Dim asmMainConstructor As String
+Dim asmMainQA As String
+
+Private Sub Class_Initialize()
+    asmName = ""
+    asmDescription = ""
+    asmRevision = ""
+    asmDevelopedBy = ""
+    asmCheckedBy = ""
+    asmMainConstructor = ""
+    asmMainQA = ""
+End Sub
+
+Public Sub setUpMainAsmProperties(ByRef swApp As SldWorks.SldWorks, ByRef swModel As SldWorks.ModelDoc2, ByRef swView As SldWorks.View, ByRef asmPath As String, ByRef drwPath As String, ByRef configurationNames As Variant)
+    asmPath = swView.GetReferencedModelName
+    Dim customPrMgr As SldWorks.CustomPropertyManager
+    Debug.Print "Success = " & swView.GetReferencedModelName
+        
+    Set swModel = swApp.ActivateDoc3(asmPath, False, 0, 0)
+    Set customPrMgr = swModel.Extension.CustomPropertyManager("")
+        
+    customPrMgr.Get5 "Eia", True, asmName, asmName, True
+    customPrMgr.Get5 "Iienaiea", True, asmDescription, asmDescription, True
+    customPrMgr.Get5 "?aaecey", True, asmRevision, asmRevision, True
+    customPrMgr.Get5 "?ac?aaioee", True, asmDevelopedBy, asmDevelopedBy, True
+    customPrMgr.Get5 "I?iaa?ee", True, asmCheckedBy, asmCheckedBy, True
+    customPrMgr.Get5 "Ioa. eiino?.", True, asmMainConstructor, asmMainConstructor, True
+    customPrMgr.Get5 "I. eiio?ie", True, asmMainQA, asmMainQA, True
+    
+    configurationNames = swModel.GetConfigurationNames
+    
+    swView.SetVisible False, False
+    Set swModel = swApp.ActivateDoc3(drwPath, False, 0, 0)
+End Sub
+
+Public Function getName() As String
+    getName = asmName
+    Exit Function
+End Function
+
+Public Function getDescription() As String
+    getDescription = asmDescription
+    Exit Function
+End Function
+
+Public Function getRevision() As String
+    getRevision = asmRevision
+    Exit Function
+End Function
+
+Public Function getDevelopedBy() As String
+    getDevelopedBy = asmDevelopedBy
+    Exit Function
+End Function
+
+Public Function getCheckedBy() As String
+    getCheckedBy = asmCheckedBy
+    Exit Function
+End Function
+
+Public Function getMainConstructor() As String
+    getMainConstructor = asmMainConstructor
+    Exit Function
+End Function
+
+Public Function getMainQA() As String
+    getMainQA = asmMainQA
+    Exit Function
+End Function
+
