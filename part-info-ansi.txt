@@ -18,7 +18,7 @@ Private Sub Class_Initialize()
 End Sub
     
 Sub SetStandardPart(cellText As String)
-    If (cellText = "Yes") Or (cellText = "Aa") Then
+    If (cellText = "Yes") Or (cellText = "Да") Then
         Standard = True
     Else
         Standard = False
@@ -97,7 +97,7 @@ End Function
         
 Sub SortPartNamesAndSetNameVariant()
     Dim i As Integer
-    ReDim vPartNames(partNames.count)
+    ReDim vPartNames(0 To partNames.count - 1)
     Set partNames = sortCollection(partNames)
     For i = 1 To partNames.count
         vPartNames(i - 1) = partNames.item(i)

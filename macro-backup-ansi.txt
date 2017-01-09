@@ -33,7 +33,7 @@ Function setBomTableAnnotation(sView As SldWorks.View) As SldWorks.BomTableAnnot
     Dim bomTblAnnotation As SldWorks.BomTableAnnotation
     Dim bomStandard As String
     
-    bomStandard = "C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\lang\english\bom-standard.sldbomtbt"
+    bomStandard = "C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS (2)\lang\english\bom-standard.sldbomtbt"
     Set bomTblAnnotation = sView.InsertBomTable3(False, 0, 0, swBOMConfigurationAnchor_BottomLeft, swBomType_TopLevelOnly, "", bomStandard, False)
     
     bomTblAnnotation.BomFeature.SetConfigurations True, True, configurationNames
@@ -254,15 +254,17 @@ Function createNewSheetAndTableAnnotation(swDrawing As SldWorks.DrawingDoc, firs
     Dim endCount As Integer
         
     pageCounter = pageCounter + 1
-    
+    '"Sheet" + CStr(pageCounter) + CStr(i)
     If Not ((i = 0) And (pageCounter = 1)) Then
-        swDrawing.NewSheet3 "Sheet" + CStr(pageCounter) + CStr(i), swDwgPaperA4size, swDwgTemplateCustom, 1, 1, False, swApp.GetCurrentMacroPathFolder + "\bom1.slddrt", 0, 0, 0
+        swDrawing.NewSheet3 "Sheet" + CStr(pageCounter) + CStr(i), swDwgPaperA4size, swDwgTemplateCustom, 1, 1, False, swApp.GetCurrentMacroPathFolder + "\bom2.slddrt", 0, 0, False
     Else
         Dim firstSheet As SldWorks.Sheet
         Set firstSheet = swDrawing.GetCurrentSheet
-        firstSheet.SetTemplateName (swApp.GetCurrentMacroPathFolder + "\bom1.slddrt")
-        firstSheet.SheetFormatVisible = True
-        firstSheet.ReloadTemplate False
+        firstSheet.SetTemplateName ("Template")
+        'firstSheet.SheetFormatVisible = True
+        'firstSheet.ReloadTemplate False
+        swDrawing.SetupSheet4 "Sheet1", swDwgPaperA4size, swDwgTemplateCustom, 1, 1, False, swApp.GetCurrentMacroPathFolder + "\bom2.slddrt", 0, 0, 0
+        swModel.EditSheet
     End If
         
     Set tempTblAnn = setUpTable(firstPage)
@@ -339,8 +341,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
             Set swTblTxtFormat = swTblAnn.GetCellTextFormat(currentRow, 4)
             swTblTxtFormat.Underline = True
             swTblAnn.SetCellTextFormat currentRow, 4, False, swTblTxtFormat
-            currentRow = currentRow + 1
-            
+            currentRow = currentRow + 2
                             
             For j = 1 To collPartInfo.count
                 Set tempPart = collPartInfo.item(j)
@@ -372,7 +373,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
             Next
         End If
                 
-        If (currentRow + 3 > maxRowsAllowed) Then
+        If (currentRow + 4 > maxRowsAllowed) Then
             Set swTblAnn = createNewSheetAndTableAnnotation(swDrawing, False, configCountStep, i, totalPageCounter, currentRow, configPages, maxRowsAllowed)
         End If
         currentRow = currentRow + 1
@@ -380,48 +381,47 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
         Set swTblTxtFormat = swTblAnn.GetCellTextFormat(currentRow, 4)
         swTblTxtFormat.Underline = True
         swTblAnn.SetCellTextFormat currentRow, 4, False, swTblTxtFormat
-        currentRow = currentRow + 1
+        currentRow = currentRow + 2
                         
         For j = 1 To collPartInfo.count
-            Set tempPart = collPartInfo.item(j)
-            If Not (tempPart.isAsm) And Not (tempPart.isStandard) Then
-                If (currentRow + 1 > maxRowsAllowed) Then
-                    Set swTblAnn = createNewSheetAndTableAnnotation(swDrawing, False, configCountStep, i, totalPageCounter, currentRow, configPages, maxRowsAllowed)
-                End If
-                swTblAnn.Text(currentRow, 2) = tempPart.GetItemNumber
-                swTblAnn.Text(currentRow, 4) = tempPart.GetPartDescription
-                For k = 0 To tempPart.GetNamesCount
-                    If (k = 0) Then
-                        swTblAnn.Text(currentRow, 3) = tempPart.GetPartName(k)
-                    Else
-                        If (currentRow + 1 > maxRowsAllowed) Then
-                            Set swTblAnn = createNewSheetAndTableAnnotation(swDrawing, False, configCountStep, i, totalPageCounter, currentRow, configPages, maxRowsAllowed)
-                        End If
-                        swTblAnn.CellTextHorizontalJustification(currentRow, 3) = swTextJustificationRight
-                        swTblAnn.Text(currentRow, 3) = Right(tempPart.GetPartName(k), 3)
+                Set tempPart = collPartInfo.item(j)
+                If Not (tempPart.isAsm) And Not (tempPart.isStandard) Then
+                    If (currentRow + 1 > maxRowsAllowed) Then
+                        Set swTblAnn = createNewSheetAndTableAnnotation(swDrawing, False, configCountStep, i, totalPageCounter, currentRow, configPages, maxRowsAllowed)
                     End If
-                    For l = configStartIndex To configEndIndex
-                        count = tempPart.GetPartCount(CStr(l) + tempPart.GetPartName(k))
-                        If (count > 0) Then
-                            swTblAnn.Text(currentRow, 5 + l - configStartIndex) = count
+                    swTblAnn.Text(currentRow, 2) = tempPart.GetItemNumber
+                    swTblAnn.Text(currentRow, 4) = tempPart.GetPartDescription
+                    For k = 0 To tempPart.GetNamesCount
+                        If (k = 0) Then
+                            swTblAnn.Text(currentRow, 3) = tempPart.GetPartName(k)
+                        Else
+                            If (currentRow + 1 > maxRowsAllowed) Then
+                                Set swTblAnn = createNewSheetAndTableAnnotation(swDrawing, False, configCountStep, i, totalPageCounter, currentRow, configPages, maxRowsAllowed)
+                            End If
+                            swTblAnn.CellTextHorizontalJustification(currentRow, 3) = swTextJustificationRight
+                            swTblAnn.Text(currentRow, 3) = Right(tempPart.GetPartName(k), 3)
                         End If
+                        For l = configStartIndex To configEndIndex
+                            count = tempPart.GetPartCount(CStr(l) + tempPart.GetPartName(k))
+                            If (count > 0) Then
+                                swTblAnn.Text(currentRow, 5 + l - configStartIndex) = count
+                            End If
+                        Next
+                        currentRow = currentRow + 1
                     Next
-                    currentRow = currentRow + 1
-                Next
-            End If
-        Next
+                End If
+            Next
         
         If (containStandard) Then
-            If (currentRow + 3 > maxRowsAllowed) Then
+            If (currentRow + 4 > maxRowsAllowed) Then
                 Set swTblAnn = createNewSheetAndTableAnnotation(swDrawing, False, configCountStep, i, totalPageCounter, currentRow, configPages, maxRowsAllowed)
             End If
             currentRow = currentRow + 1
             swTblAnn.Text(currentRow, 4) = "Стандартни елементи"
             Set swTblTxtFormat = swTblAnn.GetCellTextFormat(currentRow, 4)
             swTblTxtFormat.Underline = True
-            swTblTxtFormat.Italic = True
             swTblAnn.SetCellTextFormat currentRow, 4, False, swTblTxtFormat
-            currentRow = currentRow + 1
+            currentRow = currentRow + 2
             
                             
             For j = 1 To collPartInfo.count
@@ -462,11 +462,13 @@ Sub sortFillAndRenamePages(swDrawing As SldWorks.DrawingDoc, swModel As SldWorks
     sheetNames = swDrawing.GetSheetNames
     For i = 0 To UBound(sheetNames)
         swDrawing.ActivateSheet sheetNames(i)
-        swDrawing.CreateText2 mainAsm.getDescription, 0.222555, 0.036345, 0, 0.005, 0
+        'swDrawing.CreateText2 mainAsm.getDescription, 0.222555, 0.036345, 0, 0.005, 0
+        swDrawing.CreateText2 mainAsm.getDescription, 0.219, 0.036345, 0, 0.005, 0
         swDrawing.CreateText2 Left(mainAsm.getName, Len(mainAsm.getName) - 2) + mainAsm.getRevision, 0.239765, 0.01598, 0, 0.005, 0
         swDrawing.CreateText2 mainAsm.getDevelopedBy, 0.127285, 0.021785, 0, 0.002, 0
         swDrawing.CreateText2 mainAsm.getCheckedBy, 0.127285, 0.016795, 0, 0.002, 0
         swDrawing.CreateText2 mainAsm.getMainQA, 0.127285, 0.011615, 0, 0.002, 0
+        swDrawing.CreateText2 "<STACK divider=slash>" + CStr(i + 1) + "<OVER>" + CStr(swDrawing.GetSheetCount) + "</STACK>", 0.183015, 0.03675, 0, 0.004, 0
     Next
 End Sub
 

@@ -25,13 +25,13 @@ Public Sub setUpMainAsmProperties(ByRef swApp As SldWorks.SldWorks, ByRef swMode
     Set swModel = swApp.ActivateDoc3(asmPath, False, 0, 0)
     Set customPrMgr = swModel.Extension.CustomPropertyManager("")
         
-    customPrMgr.Get5 "Eia", True, asmName, asmName, True
-    customPrMgr.Get5 "Iienaiea", True, asmDescription, asmDescription, True
-    customPrMgr.Get5 "?aaecey", True, asmRevision, asmRevision, True
-    customPrMgr.Get5 "?ac?aaioee", True, asmDevelopedBy, asmDevelopedBy, True
-    customPrMgr.Get5 "I?iaa?ee", True, asmCheckedBy, asmCheckedBy, True
-    customPrMgr.Get5 "Ioa. eiino?.", True, asmMainConstructor, asmMainConstructor, True
-    customPrMgr.Get5 "I. eiio?ie", True, asmMainQA, asmMainQA, True
+    customPrMgr.Get5 "Име", True, asmName, asmName, True
+    customPrMgr.Get5 "Описание", True, asmDescription, asmDescription, True
+    customPrMgr.Get5 "Ревизия", True, asmRevision, asmRevision, True
+    customPrMgr.Get5 "Разработил", True, asmDevelopedBy, asmDevelopedBy, True
+    customPrMgr.Get5 "Проверил", True, asmCheckedBy, asmCheckedBy, True
+    customPrMgr.Get5 "Отг. констр.", True, asmMainConstructor, asmMainConstructor, True
+    customPrMgr.Get5 "Т. контрол", True, asmMainQA, asmMainQA, True
     
     configurationNames = swModel.GetConfigurationNames
     
