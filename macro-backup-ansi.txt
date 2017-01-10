@@ -34,7 +34,7 @@ Function setBomTableAnnotation(sView As SldWorks.View) As SldWorks.BomTableAnnot
     Dim bomTblAnnotation As SldWorks.BomTableAnnotation
     Dim bomStandard As String
     
-    bomStandard = "C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS (2)\lang\english\bom-standard.sldbomtbt"
+    bomStandard = "C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS\lang\english\bom-standard.sldbomtbt"
     Set bomTblAnnotation = sView.InsertBomTable3(False, 0, 0, swBOMConfigurationAnchor_BottomLeft, swBomType_TopLevelOnly, "", bomStandard, False)
     
     bomTblAnnotation.BomFeature.SetConfigurations True, True, configurationNames
@@ -259,15 +259,12 @@ Function createNewSheetAndTableAnnotation(swDrawing As SldWorks.DrawingDoc, firs
     Dim endCount As Integer
         
     pageCounter = pageCounter + 1
-    '"Sheet" + CStr(pageCounter) + CStr(i)
     If Not ((i = 0) And (pageCounter = 1)) Then
         swDrawing.NewSheet3 "Sheet" + CStr(pageCounter) + CStr(i), swDwgPaperA4size, swDwgTemplateCustom, 1, 1, False, swApp.GetCurrentMacroPathFolder + "\bom2.slddrt", 0, 0, False
     Else
         Dim firstSheet As SldWorks.Sheet
         Set firstSheet = swDrawing.GetCurrentSheet
         firstSheet.SetTemplateName ("Template")
-        'firstSheet.SheetFormatVisible = True
-        'firstSheet.ReloadTemplate False
         swDrawing.SetupSheet4 "Sheet1", swDwgPaperA4size, swDwgTemplateCustom, 1, 1, False, swApp.GetCurrentMacroPathFolder + "\bom2.slddrt", 0, 0, 0
         swModel.EditSheet
     End If
@@ -397,6 +394,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
                     End If
                     swTblAnn.Text(currentRow, 2) = tempPart.GetItemNumber
                     swTblAnn.Text(currentRow, 4) = tempPart.GetPartDescription
+                    swTblAnn.Text(currentRow, 20) = tempPart.GetPartNote
                     For k = 0 To tempPart.GetNamesCount
                         If (k = 0) Then
                             swTblAnn.Text(currentRow, 3) = tempPart.GetPartName(k)
@@ -438,6 +436,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
                     End If
                     swTblAnn.Text(currentRow, 2) = tempPart.GetItemNumber
                     swTblAnn.Text(currentRow, 4) = tempPart.GetPartDescription
+                    swTblAnn.Text(currentRow, 20) = tempPart.GetPartNote
                     For l = configStartIndex To configEndIndex
                         count = tempPart.GetPartCount(CStr(l) + tempPart.GetPartName(0))
                         If (count > 0) Then
