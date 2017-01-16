@@ -1,0 +1,118 @@
+'Option Explicit
+
+Dim swApp As SldWorks.SldWorks
+Dim swModel As SldWorks.ModelDoc2
+Dim swDrawing As SldWorks.DrawingDoc
+Dim swTblAnn As SldWorks.TableAnnotation
+Dim textFmt As SldWorks.textFormat
+Dim res As Boolean
+
+Function setUpTable(firstPage As Boolean) As SldWorks.TableAnnotation
+    Dim swTblAnn As SldWorks.TableAnnotation
+    Dim Index As Long
+    Dim rows As Integer
+    Dim columns As Integer
+    Dim tFormat As textFormat
+            
+    If (firstPage) Then
+        rows = 17 'old 17 old 46
+        columns = 22 'old 22 old 26
+    Else
+        'rows = 22
+        rows = 17
+        columns = 21
+    End If
+    Set swTblAnn = swDrawing.InsertTableAnnotation2(False, 0.005, 0.194, swBOMConfigurationAnchor_TopLeft, "", rows, columns)
+    
+    swTblAnn.BorderLineWeight = swLW_THIN
+    
+    Set tFormat = swTblAnn.GetTextFormat
+    tFormat.TypeFaceName = "SWTxt"
+    swTblAnn.SetTextFormat False, tFormat
+    
+    'Merging cells for descriptions
+    swTblAnn.MergeCells 0, 0, 0, 2
+    swTblAnn.MergeCells 0, 3, 0, 5
+    swTblAnn.MergeCells 1, 4, 1, 5
+    For Index = 2 To swTblAnn.RowCount - 5
+        swTblAnn.MergeCells Index, 4, Index, 5
+    Next
+    swTblAnn.MergeCells swTblAnn.RowCount - 4, 0, swTblAnn.RowCount - 1, 4
+    swTblAnn.MergeCells swTblAnn.RowCount - 4, 5, swTblAnn.RowCount - 2, 5
+    swTblAnn.MergeCells 0, 6, 0, 20
+    
+    'Setting row height
+    For Index = 0 To swTblAnn.RowCount
+        swTblAnn.SetRowHeight Index, 0.008, 0
+    Next
+        
+    'Setting column widths
+    For Index = 0 To 3
+        swTblAnn.SetColumnWidth Index, 0.006, 0
+    Next
+    
+    swTblAnn.SetColumnWidth 3, 0.04, 0
+    swTblAnn.SetColumnWidth 4, 0.072, 0
+    
+    swTblAnn.Text(swTblAnn.RowCount - 4, 5) = "Ста-" & vbCrLf & "дий"
+    swTblAnn.Text(swTblAnn.RowCount - 1, 5) = "Условно " & vbCrLf & "наименование"
+    
+    swTblAnn.SetColumnWidth 5, 0.015, 0
+    swTblAnn.SetRowHeight swTblAnn.RowCount - 4, 0.006, 0
+    swTblAnn.SetRowHeight swTblAnn.RowCount - 3, 0.006, 0
+    swTblAnn.SetRowHeight swTblAnn.RowCount - 2, 0.006, 0
+    swTblAnn.SetRowHeight swTblAnn.RowCount - 1, 0.01, 0
+    
+    For Index = 6 To columns
+        swTblAnn.SetColumnWidth Index, 0.008, 0
+    Next
+    
+    swTblAnn.SetColumnWidth columns - 1, 0.037, 0
+    
+    'Setting text format for cells
+    
+    Set tFormat = swTblAnn.GetTextFormat
+    tFormat.CharHeightInPts = 11
+    swTblAnn.SetTextFormat False, tFormat
+    Set tFormat = swTblAnn.GetCellTextFormat(1, 0)
+    tFormat.LineLength = 0.008
+    tFormat.CharHeight = 0.001
+    swTblAnn.SetCellTextFormat 1, 0, False, tFormat
+    
+    'Setting text for cells
+    swTblAnn.Text(1, 0) = "Формат"
+    swTblAnn.Text(1, 2) = "№"
+    swTblAnn.Text(1, 3) = "Детайл"
+    swTblAnn.Text(1, 4) = "Описание"
+    swTblAnn.Text(0, 6) = "Сглобена единица "
+    swTblAnn.Text(0, 20) = "Бележка"
+    
+    Set setUpTable = swTblAnn
+End Function
+
+Sub main()
+    Set swApp = Application.SldWorks
+    Set swModel = swApp.ActiveDoc
+    Set swDrawing = swModel
+    Set swTblAnn = setUpTable(True)
+    
+    Dim i As Integer
+    Dim k As Integer
+    
+    For i = 0 To swTblAnn.RowCount - 1
+        For k = 0 To swTblAnn.ColumnCount - 1
+            
+        Next
+    Next
+    
+    Set textFmt = swTblAnn.GetCellTextFormat(1, 1)
+    'textFmt.Escapement = 90 / 57.3
+    swTblAnn.SetTextFormat False, textFmt
+    
+    textFmt.Escapement = 0
+    
+    swTblAnn.SetCellTextFormat 1, 1, False, textFmt
+    swTblAnn.SetCellTextFormat 1, 0, False, textFmt
+    
+    Debug.Print "done"
+End Sub
