@@ -4,7 +4,6 @@ Dim partNames As New Collection
 Dim vPartNames As Variant
 Dim partCount As New Collection
 Dim partDescription As String
-Dim partNote As String
 Dim Standard As Boolean
 Dim Asm As Boolean
     
@@ -12,24 +11,14 @@ Dim Asm As Boolean
 Private Sub Class_Initialize()
     itemNumber = ""
     partPath = ""
-    partNote = ""
     partDescription = ""
     ReDim vPartNames(1)
     Standard = False
     Asm = False
 End Sub
     
-Sub SetPartNote(note As String)
-    partNote = note
-End Sub
-
-Function GetPartNote() As String
-    GetPartNote = partNote
-    Exit Function
-End Function
-    
 Sub SetStandardPart(cellText As String)
-    If (cellText = "Yes") Or (cellText = "Aa") Then
+    If (cellText = "Yes") Or (cellText = "Да") Then
         Standard = True
     Else
         Standard = False
