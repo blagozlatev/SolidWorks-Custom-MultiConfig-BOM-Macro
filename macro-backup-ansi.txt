@@ -22,25 +22,42 @@ Function setTblAnnotationCustomBomProperties(bomTblAnn As SldWorks.BomTableAnnot
     Set swAnn = swTblAnn.GetAnnotation
     swAnn.Visible = swAnnotationVisibilityState_e.swAnnotationHidden
        
-    swTblAnn.InsertColumn2 swTableItemInsertPosition_Before, 2, "Описание", swInsertColumn_DefaultWidth
-    bomTblAnn.SetColumnCustomProperty 2, "Описание"
-    bomTblAnn.SetColumnCustomProperty 3, "Стандартен детайл"
-    
+    swTblAnn.InsertColumn2 swTableItemInsertPosition_Before, 2, "Iienaiea", swInsertColumn_DefaultWidth
+    bomTblAnn.SetColumnCustomProperty 2, "Iienaiea"
+    bomTblAnn.SetColumnCustomProperty 3, "Noaiaa?oai aaoaee"
+    swTblAnn.InsertColumn2 swTableItemInsertPosition_Before, 4, "Caaaea?ea", swInsertColumn_DefaultWidth
+    bomTblAnn.SetColumnCustomProperty 4, "Caaaea?ea"
     Set setTblAnnotationCustomBomProperties = swTblAnn
 End Function
 
-Function setBomTableAnnotation(sView As SldWorks.View) As SldWorks.BomTableAnnotation
+Function setBomTableAnnotation(sView As SldWorks.View, bomExist As Boolean, bomFeature As SldWorks.bomFeature) As SldWorks.BomTableAnnotation
     Dim bomTblAnnotation As SldWorks.BomTableAnnotation
     Dim bomStandard As String
+    Dim vConfigArr As Variant
     
-    bomStandard = "C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS (2)\lang\english\bom-standard.sldbomtbt"
-    Set bomTblAnnotation = sView.InsertBomTable3(False, 0, 0, swBOMConfigurationAnchor_BottomLeft, swBomType_TopLevelOnly, "", bomStandard, False)
-    
-    bomTblAnnotation.BomFeature.SetConfigurations True, True, configurationNames
-    bomTblAnnotation.BomFeature.DisplayAsOneItem = True
-    bomTblAnnotation.BomFeature.PartConfigurationGrouping = 1
-    Set setBomTableAnnotation = bomTblAnnotation
-    Exit Function
+    If bomExist Then
+        bomStandard = "C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS (2)\lang\english\bom-standard.sldbomtbt"
+        vConfigArr = bomFeature.GetConfigurations(True, True)
+        configurationNames = vConfigArr
+        Set bomTblAnnotation = sView.InsertBomTable3(False, 0, 0, swBOMConfigurationAnchor_BottomLeft, swBomType_TopLevelOnly, "", bomStandard, False)
+        bomTblAnnotation.bomFeature.SetConfigurations True, True, vConfigArr
+        bomTblAnnotation.bomFeature.DisplayAsOneItem = True
+        bomTblAnnotation.bomFeature.PartConfigurationGrouping = 1
+                
+        BubbleSrt (configurationNames)
+                
+        Set setBomTableAnnotation = bomTblAnnotation
+        Exit Function
+    Else
+        bomStandard = "C:\Program Files\SOLIDWORKS Corp\SOLIDWORKS (2)\lang\english\bom-standard.sldbomtbt"
+        Set bomTblAnnotation = sView.InsertBomTable3(False, 0, 0, swBOMConfigurationAnchor_BottomLeft, swBomType_TopLevelOnly, "", bomStandard, False)
+        bomTblAnnotation.bomFeature.SetConfigurations True, True, configurationNames
+        bomTblAnnotation.bomFeature.DisplayAsOneItem = True
+        bomTblAnnotation.bomFeature.PartConfigurationGrouping = 1
+        Set setBomTableAnnotation = bomTblAnnotation
+        BubbleSrt (configurationNames)
+        Exit Function
+    End If
 End Function
     
 Function setIsAsm(vPathNames As Variant) As Boolean
@@ -93,7 +110,7 @@ Function getPartInfo(swTblAnnotation As SldWorks.TableAnnotation, bomTblAnnotati
                     Dim x As Integer
                     Dim tempCount As String
                         
-                    tempCount = swTblAnnotation.DisplayedText(0 + j, 4 + k)
+                    tempCount = swTblAnnotation.DisplayedText(0 + j, 5 + k)
                     If tempCount <> "-" Then
                         x = CInt(tempCount)
                     Else
@@ -106,6 +123,7 @@ Function getPartInfo(swTblAnnotation As SldWorks.TableAnnotation, bomTblAnnotati
             Part.SetAsmPart (setIsAsm(bomTblAnnotation.GetModelPathNames(i, itemNumberForChecking, partNumber)))
             Part.SetPartDescription (swTblAnnotation.DisplayedText(i, 2))
             Part.SetStandardPart (swTblAnnotation.DisplayedText(i, 3))
+            Part.SetPartNote (swTblAnnotation.DisplayedText(i, 4))
             Part.SortPartNamesAndSetNameVariant
             PartInfo.Add Part
             Set Part = New CustomPartInfo
@@ -133,35 +151,83 @@ End Function
 Function setUpTable(firstPage As Boolean) As SldWorks.TableAnnotation
     Dim swTblAnn As SldWorks.TableAnnotation
     Dim Index As Long
+    Dim i As Integer
+    Dim k As Integer
     Dim rows As Integer
     Dim columns As Integer
     Dim tFormat As TextFormat
-            
-    If (firstPage) Then
-        rows = 17 'old 17 old 46
-        columns = 21 'old 22 old 26
-    Else
-        'rows = 22
-        rows = 17
-        columns = 21
-    End If
+    
+    rows = 17
+    columns = 22
+    
     Set swTblAnn = swDraw.InsertTableAnnotation2(False, 0.005, 0.194, swBOMConfigurationAnchor_TopLeft, "", rows, columns)
     
     swTblAnn.BorderLineWeight = swLW_THIN
     
     Set tFormat = swTblAnn.GetTextFormat
     tFormat.TypeFaceName = "SWTxt"
+    tFormat.CharHeightInPts = 10
     swTblAnn.SetTextFormat False, tFormat
     
-    'Merging cells for descriptions
-    swTblAnn.MergeCells 0, 0, 0, 2
-    swTblAnn.MergeCells 0, 3, 0, 4
-    swTblAnn.MergeCells 0, 5, 0, 19
-    
-    'Setting row height
-    For Index = 0 To swTblAnn.RowCount
-        swTblAnn.SetRowHeight Index, 0.008, 0
-    Next
+    If (firstPage) Then
+        swTblAnn.MergeCells 0, 0, 1, 0
+        swTblAnn.MergeCells 0, 1, 1, 1
+        swTblAnn.MergeCells 0, 2, 1, 2
+        swTblAnn.MergeCells 0, 3, 1, 3
+        swTblAnn.MergeCells 0, 4, 1, 5
+        swTblAnn.MergeCells 0, 4, 0, 5
+        swTblAnn.MergeCells 1, 4, 1, 5
+        For Index = 2 To swTblAnn.RowCount - 5
+            swTblAnn.MergeCells Index, 4, Index, 5
+        Next
+        swTblAnn.MergeCells swTblAnn.RowCount - 4, 0, swTblAnn.RowCount - 1, 4
+        swTblAnn.MergeCells swTblAnn.RowCount - 4, 5, swTblAnn.RowCount - 2, 5
+        swTblAnn.MergeCells 0, 6, 0, 20
+        
+        Set tFormat = swTblAnn.GetTextFormat
+        tFormat.TypeFaceName = "SWTxt"
+        tFormat.CharHeightInPts = 6.5
+        
+        For i = swTblAnn.RowCount - 4 To swTblAnn.RowCount - 1
+            For k = 0 To swTblAnn.ColumnCount - 1
+                swTblAnn.SetCellTextFormat i, k, False, tFormat
+                swTblAnn.SetRowVerticalGap i, 0
+            Next
+        Next
+        swTblAnn.Text(swTblAnn.RowCount - 4, 5) = "Noa-" & vbCrLf & "aee"
+        swTblAnn.Text(swTblAnn.RowCount - 1, 5) = "Oneiaii" & vbCrLf & "iaeia-" & vbCrLf & "iiaaiea"
+        
+        
+        For Index = 0 To swTblAnn.RowCount - 4
+            swTblAnn.SetRowHeight Index, 0.008, 0
+        Next
+        
+        swTblAnn.SetColumnWidth 5, 0.015, 0
+        swTblAnn.SetRowHeight swTblAnn.RowCount - 4, 0.006, 0
+        swTblAnn.SetRowHeight swTblAnn.RowCount - 3, 0.006, 0
+        swTblAnn.SetRowHeight swTblAnn.RowCount - 2, 0.006, 0
+        swTblAnn.SetRowHeight swTblAnn.RowCount - 1, 0.017, 0
+    Else
+        swTblAnn.MergeCells 0, 0, 1, 0
+        swTblAnn.MergeCells 0, 1, 1, 1
+        swTblAnn.MergeCells 0, 2, 1, 2
+        swTblAnn.MergeCells 0, 3, 1, 3
+        swTblAnn.MergeCells 0, 4, 1, 5
+        swTblAnn.MergeCells 0, 4, 0, 5
+        swTblAnn.MergeCells 1, 4, 1, 5
+        For Index = 2 To swTblAnn.RowCount - 1
+            swTblAnn.MergeCells Index, 4, Index, 5
+        Next
+        swTblAnn.MergeCells 0, 6, 0, 20
+        
+        
+        'Setting row height
+        For Index = 0 To swTblAnn.RowCount
+            swTblAnn.SetRowHeight Index, 0.008, 0
+        Next
+        swTblAnn.SetColumnWidth 5, 0.015, 0
+    End If
+        
         
     'Setting column widths
     For Index = 0 To 3
@@ -169,9 +235,9 @@ Function setUpTable(firstPage As Boolean) As SldWorks.TableAnnotation
     Next
     
     swTblAnn.SetColumnWidth 3, 0.04, 0
-    swTblAnn.SetColumnWidth 4, 0.072, 0
+    swTblAnn.SetColumnWidth 4, 0.057, 0
     
-    For Index = 5 To columns
+    For Index = 6 To columns
         swTblAnn.SetColumnWidth Index, 0.008, 0
     Next
     
@@ -179,21 +245,21 @@ Function setUpTable(firstPage As Boolean) As SldWorks.TableAnnotation
     
     'Setting text format for cells
     
-    Set tFormat = swTblAnn.GetTextFormat
-    tFormat.CharHeightInPts = 11
-    swTblAnn.SetTextFormat False, tFormat
     Set tFormat = swTblAnn.GetCellTextFormat(1, 0)
     tFormat.LineLength = 0.008
     tFormat.CharHeight = 0.001
-    swTblAnn.SetCellTextFormat 1, 0, False, tFormat
+    swTblAnn.SetCellTextFormat 0, 0, False, tFormat
+    swTblAnn.SetCellTextFormat 0, 1, False, tFormat
+    swTblAnn.SetCellTextFormat 0, 2, False, tFormat
     
     'Setting text for cells
-    swTblAnn.Text(1, 0) = "Формат"
-    swTblAnn.Text(1, 2) = "№"
-    swTblAnn.Text(1, 3) = "Детайл"
-    swTblAnn.Text(1, 4) = "Описание"
-    swTblAnn.Text(0, 5) = "Сглобена единица " + Left(mainAsm.getName, Len(mainAsm.getName) - 2)
-    swTblAnn.Text(0, 20) = "Бележка"
+    swTblAnn.Text(0, 0) = "Oi?-iao"
+    swTblAnn.Text(0, 1) = "? ii ?aa"
+    swTblAnn.Text(0, 2) = "Iic."
+    swTblAnn.Text(0, 3) = "Icia?aiea"
+    swTblAnn.Text(0, 4) = "Iaeiaiiaaiea"
+    swTblAnn.Text(0, 6) = "A?ie ca eciueiaiea a " + Left(mainAsm.getName, Len(mainAsm.getName) - 2)
+    swTblAnn.Text(0, 21) = "Caaaea?ea"
     
     Set setUpTable = swTblAnn
 End Function
@@ -208,13 +274,16 @@ Function configPagesCount(configCount As Integer) As Integer
         Debug.Print "CONFIG PAGE COUNT: " & result + 1
         configPagesCount = result + 1
     End If
+    If result < 1 Then
+        configPagesCount = 1
+    End If
 End Function
 
 Function BubbleSrt(ArrayIn)
     Dim SrtTemp As Variant
     Dim i As Long
     Dim j As Long
-
+    
     For i = LBound(ArrayIn) To UBound(ArrayIn)
         For j = i + 1 To UBound(ArrayIn)
             If ArrayIn(i) > ArrayIn(j) Then
@@ -254,15 +323,12 @@ Function createNewSheetAndTableAnnotation(swDrawing As SldWorks.DrawingDoc, firs
     Dim endCount As Integer
         
     pageCounter = pageCounter + 1
-    '"Sheet" + CStr(pageCounter) + CStr(i)
     If Not ((i = 0) And (pageCounter = 1)) Then
         swDrawing.NewSheet3 "Sheet" + CStr(pageCounter) + CStr(i), swDwgPaperA4size, swDwgTemplateCustom, 1, 1, False, swApp.GetCurrentMacroPathFolder + "\bom2.slddrt", 0, 0, False
     Else
         Dim firstSheet As SldWorks.Sheet
         Set firstSheet = swDrawing.GetCurrentSheet
         firstSheet.SetTemplateName ("Template")
-        'firstSheet.SheetFormatVisible = True
-        'firstSheet.ReloadTemplate False
         swDrawing.SetupSheet4 "Sheet1", swDwgPaperA4size, swDwgTemplateCustom, 1, 1, False, swApp.GetCurrentMacroPathFolder + "\bom2.slddrt", 0, 0, 0
         swModel.EditSheet
     End If
@@ -270,9 +336,8 @@ Function createNewSheetAndTableAnnotation(swDrawing As SldWorks.DrawingDoc, firs
     Set tempTblAnn = setUpTable(firstPage)
     
     If firstPage Then
-        maxRowsAllowed = 17
+        maxRowsAllowed = 12
     Else
-        'maxRowsAllowed = 22
         maxRowsAllowed = 17
     End If
     
@@ -280,11 +345,29 @@ Function createNewSheetAndTableAnnotation(swDrawing As SldWorks.DrawingDoc, firs
     
     For startCount = 0 + (configCountStep * i) To endCount
         If startCount = 0 Then
-            tempTblAnn.Text(1, 5 + startCount - configCountStep * i) = "-"
+            tempTblAnn.Text(1, 6 + startCount - configCountStep * i) = "-"
+            If (firstPage) Then
+                tempTblAnn.Text(tempTblAnn.RowCount - 1, 6 + startCount - configCountStep * i) = mainAsm.getConfName(CStr(configurationNames(startCount)))
+                tempTblAnn.Text(tempTblAnn.RowCount - 2, 6 + startCount - configCountStep * i) = "O1"
+                tempTblAnn.Text(tempTblAnn.RowCount - 3, 6 + startCount - configCountStep * i) = "A"
+                tempTblAnn.Text(tempTblAnn.RowCount - 4, 6 + startCount - configCountStep * i) = "A"
+            End If
         ElseIf startCount < 10 Then
-            tempTblAnn.Text(1, 5 + startCount - configCountStep * i) = "0" + CStr(startCount)
+            tempTblAnn.Text(1, 6 + startCount - configCountStep * i) = "0" + CStr(startCount)
+            If (firstPage) Then
+                tempTblAnn.Text(tempTblAnn.RowCount - 1, 6 + startCount - configCountStep * i) = mainAsm.getConfName(CStr(configurationNames(startCount)))
+                tempTblAnn.Text(tempTblAnn.RowCount - 2, 6 + startCount - configCountStep * i) = "O1"
+                tempTblAnn.Text(tempTblAnn.RowCount - 3, 6 + startCount - configCountStep * i) = "A"
+                tempTblAnn.Text(tempTblAnn.RowCount - 4, 6 + startCount - configCountStep * i) = "A"
+            End If
         Else
-            tempTblAnn.Text(1, 5 + startCount - configCountStep * i) = CStr(startCount)
+            tempTblAnn.Text(1, 6 + startCount - configCountStep * i) = CStr(startCount)
+            If (firstPage) Then
+                tempTblAnn.Text(tempTblAnn.RowCount - 1, 6 + startCount - configCountStep * i) = mainAsm.getConfName(CStr(configurationNames(startCount)))
+                tempTblAnn.Text(tempTblAnn.RowCount - 2, 6 + startCount - configCountStep * i) = "O1"
+                tempTblAnn.Text(tempTblAnn.RowCount - 3, 6 + startCount - configCountStep * i) = "A"
+                tempTblAnn.Text(tempTblAnn.RowCount - 4, 6 + startCount - configCountStep * i) = "A"
+            End If
         End If
     Next
     currentRow = 2
@@ -322,22 +405,22 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
         Set swTblAnn = createNewSheetAndTableAnnotation(swDrawing, True, configCountStep, i, totalPageCounter, currentRow, configPages, maxRowsAllowed)
         Dim swTblTxtFormat As TextFormat
         
-        swTblAnn.Text(2, 4) = "Документация"
+        swTblAnn.Text(2, 4) = "Aieoiaioaoey"
         Set swTblTxtFormat = swTblAnn.GetCellTextFormat(2, 4)
         swTblTxtFormat.Underline = True
         swTblAnn.SetCellTextFormat 2, 4, False, swTblTxtFormat
         
         swTblAnn.Text(3, 3) = mainAsm.getName
-        swTblAnn.Text(3, 4) = "Чертеж сборен"
+        swTblAnn.Text(3, 4) = "?a?oa? nai?ai"
         For j = configStartIndex To configEndIndex
-            swTblAnn.Text(3, 5 + j - (configCountStep * i)) = "X"
+            swTblAnn.Text(3, 6 + j - (configCountStep * i)) = "X"
         Next
         
         currentRow = 5
-        maxRowsAllowed = 17
+        maxRowsAllowed = 12
         
         If (containAsm) Then
-            swTblAnn.Text(currentRow, 4) = "Сглобени единици"
+            swTblAnn.Text(currentRow, 4) = "Naeiaaie aaeieoe"
             Set swTblTxtFormat = swTblAnn.GetCellTextFormat(currentRow, 4)
             swTblTxtFormat.Underline = True
             swTblAnn.SetCellTextFormat currentRow, 4, False, swTblTxtFormat
@@ -351,6 +434,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
                     End If
                     swTblAnn.Text(currentRow, 2) = tempPart.GetItemNumber
                     swTblAnn.Text(currentRow, 4) = tempPart.GetPartDescription
+                    swTblAnn.Text(currentRow, 21) = tempPart.GetPartNote
                     For k = 0 To tempPart.GetNamesCount
                         If (k = 0) Then
                             swTblAnn.Text(currentRow, 3) = tempPart.GetPartName(k)
@@ -364,7 +448,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
                         For l = configStartIndex To configEndIndex
                             count = tempPart.GetPartCount(CStr(l) + tempPart.GetPartName(k))
                             If (count > 0) Then
-                                swTblAnn.Text(currentRow, 5 + l - configStartIndex) = count
+                                swTblAnn.Text(currentRow, 6 + l - configStartIndex) = count
                             End If
                         Next
                         currentRow = currentRow + 1
@@ -377,7 +461,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
             Set swTblAnn = createNewSheetAndTableAnnotation(swDrawing, False, configCountStep, i, totalPageCounter, currentRow, configPages, maxRowsAllowed)
         End If
         currentRow = currentRow + 1
-        swTblAnn.Text(currentRow, 4) = "Детайли"
+        swTblAnn.Text(currentRow, 4) = "Aaoaeee"
         Set swTblTxtFormat = swTblAnn.GetCellTextFormat(currentRow, 4)
         swTblTxtFormat.Underline = True
         swTblAnn.SetCellTextFormat currentRow, 4, False, swTblTxtFormat
@@ -391,6 +475,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
                     End If
                     swTblAnn.Text(currentRow, 2) = tempPart.GetItemNumber
                     swTblAnn.Text(currentRow, 4) = tempPart.GetPartDescription
+                    swTblAnn.Text(currentRow, 21) = tempPart.GetPartNote
                     For k = 0 To tempPart.GetNamesCount
                         If (k = 0) Then
                             swTblAnn.Text(currentRow, 3) = tempPart.GetPartName(k)
@@ -404,7 +489,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
                         For l = configStartIndex To configEndIndex
                             count = tempPart.GetPartCount(CStr(l) + tempPart.GetPartName(k))
                             If (count > 0) Then
-                                swTblAnn.Text(currentRow, 5 + l - configStartIndex) = count
+                                swTblAnn.Text(currentRow, 6 + l - configStartIndex) = count
                             End If
                         Next
                         currentRow = currentRow + 1
@@ -417,7 +502,7 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
                 Set swTblAnn = createNewSheetAndTableAnnotation(swDrawing, False, configCountStep, i, totalPageCounter, currentRow, configPages, maxRowsAllowed)
             End If
             currentRow = currentRow + 1
-            swTblAnn.Text(currentRow, 4) = "Стандартни елементи"
+            swTblAnn.Text(currentRow, 4) = "Noaiaa?oie aeaiaioe"
             Set swTblTxtFormat = swTblAnn.GetCellTextFormat(currentRow, 4)
             swTblTxtFormat.Underline = True
             swTblAnn.SetCellTextFormat currentRow, 4, False, swTblTxtFormat
@@ -432,10 +517,11 @@ Sub populateBomTable(swTblAnn As SldWorks.TableAnnotation, collPartInfo As Colle
                     End If
                     swTblAnn.Text(currentRow, 2) = tempPart.GetItemNumber
                     swTblAnn.Text(currentRow, 4) = tempPart.GetPartDescription
+                    swTblAnn.Text(currentRow, 21) = tempPart.GetPartNote
                     For l = configStartIndex To configEndIndex
                         count = tempPart.GetPartCount(CStr(l) + tempPart.GetPartName(0))
                         If (count > 0) Then
-                            swTblAnn.Text(currentRow, 5 + l - configStartIndex) = count
+                            swTblAnn.Text(currentRow, 6 + l - configStartIndex) = count
                         End If
                     Next
                     currentRow = currentRow + 1
@@ -462,12 +548,11 @@ Sub sortFillAndRenamePages(swDrawing As SldWorks.DrawingDoc, swModel As SldWorks
     sheetNames = swDrawing.GetSheetNames
     For i = 0 To UBound(sheetNames)
         swDrawing.ActivateSheet sheetNames(i)
-        'swDrawing.CreateText2 mainAsm.getDescription, 0.222555, 0.036345, 0, 0.005, 0
         swDrawing.CreateText2 mainAsm.getDescription, 0.219, 0.036345, 0, 0.005, 0
         swDrawing.CreateText2 Left(mainAsm.getName, Len(mainAsm.getName) - 2) + mainAsm.getRevision, 0.239765, 0.01598, 0, 0.005, 0
         swDrawing.CreateText2 mainAsm.getDevelopedBy, 0.127285, 0.021785, 0, 0.002, 0
         swDrawing.CreateText2 mainAsm.getCheckedBy, 0.127285, 0.016795, 0, 0.002, 0
-        swDrawing.CreateText2 mainAsm.getMainQA, 0.127285, 0.011615, 0, 0.002, 0
+        swDrawing.CreateText2 mainAsm.getMainConstructor, 0.127285, 0.011615, 0, 0.002, 0
         swDrawing.CreateText2 "<STACK divider=slash>" + CStr(i + 1) + "<OVER>" + CStr(swDrawing.GetSheetCount) + "</STACK>", 0.183015, 0.03675, 0, 0.004, 0
     Next
 End Sub
@@ -476,6 +561,10 @@ Sub main()
     Dim StartTime As Double
     Dim SecondsElapsed As Double
     Dim tFormat As SldWorks.TextFormat
+    Dim bomTblAnnotation As SldWorks.BomTableAnnotation
+    Dim bomExist As Boolean
+    Dim swFeat As SldWorks.Feature
+    Dim swBomFeat As SldWorks.bomFeature
     StartTime = Timer
 
     Set swApp = Application.SldWorks
@@ -514,8 +603,25 @@ Sub main()
         mainAsm.setUpMainAsmProperties swApp, swModel, swView, asmPath, drawingPath, configurationNames
     End If
             
-    Dim bomTblAnnotation As SldWorks.BomTableAnnotation
-    Set bomTblAnnotation = setBomTableAnnotation(swView)
+            
+    Set swFeat = swModel.FirstFeature
+    
+    Do While Not swFeat Is Nothing
+        If "BomFeat" = swFeat.GetTypeName And Not bomExist Then
+            Debug.Print "******************************"
+            Debug.Print "Feature Name : " & swFeat.Name
+
+            Set swBomFeat = swFeat.GetSpecificFeature2
+            bomExist = True
+            Set bomTblAnnotation = setBomTableAnnotation(swView, bomExist, swBomFeat)
+        End If
+        Set swFeat = swFeat.GetNextFeature
+    Loop
+            
+    If Not bomExist Then
+        Set bomTblAnnotation = setBomTableAnnotation(swView, bomExist, swBomFeat)
+    End If
+                    
     Set swTblAnnotation = setTblAnnotationCustomBomProperties(bomTblAnnotation)
             
     Set collectionPartInfo = getPartInfo(swTblAnnotation, bomTblAnnotation)

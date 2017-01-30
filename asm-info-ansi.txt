@@ -6,6 +6,7 @@ Dim asmDevelopedBy As String
 Dim asmCheckedBy As String
 Dim asmMainConstructor As String
 Dim asmMainQA As String
+Dim asmCustomNames As New Collection
 
 Private Sub Class_Initialize()
     asmName = ""
@@ -18,22 +19,37 @@ Private Sub Class_Initialize()
 End Sub
 
 Public Sub setUpMainAsmProperties(ByRef swApp As SldWorks.SldWorks, ByRef swModel As SldWorks.ModelDoc2, ByRef swView As SldWorks.View, ByRef asmPath As String, ByRef drwPath As String, ByRef configurationNames As Variant)
-    asmPath = swView.GetReferencedModelName
     Dim customPrMgr As SldWorks.CustomPropertyManager
+    Dim config As SldWorks.Configuration
+    Dim tempName As String
+    Dim i As Integer
+    
+    asmPath = swView.GetReferencedModelName
     Debug.Print "Success = " & swView.GetReferencedModelName
         
     Set swModel = swApp.ActivateDoc3(asmPath, False, 0, 0)
     Set customPrMgr = swModel.Extension.CustomPropertyManager("")
         
-    customPrMgr.Get5 "Име", True, asmName, asmName, True
-    customPrMgr.Get5 "Описание", True, asmDescription, asmDescription, True
-    customPrMgr.Get5 "Ревизия", True, asmRevision, asmRevision, True
-    customPrMgr.Get5 "Разработил", True, asmDevelopedBy, asmDevelopedBy, True
-    customPrMgr.Get5 "Проверил", True, asmCheckedBy, asmCheckedBy, True
-    customPrMgr.Get5 "Отг. констр.", True, asmMainConstructor, asmMainConstructor, True
-    customPrMgr.Get5 "Т. контрол", True, asmMainQA, asmMainQA, True
+    customPrMgr.Get5 "Eia", True, asmName, asmName, True
+    customPrMgr.Get5 "Iienaiea", True, asmDescription, asmDescription, True
+    customPrMgr.Get5 "?aaecey NI", True, asmRevision, asmRevision, True
+    customPrMgr.Get5 "?ac?aaioee NI", True, asmDevelopedBy, asmDevelopedBy, True
+    customPrMgr.Get5 "I?iaa?ee NI", True, asmCheckedBy, asmCheckedBy, True
+    customPrMgr.Get5 "Ioa. eiino?. NI", True, asmMainConstructor, asmMainConstructor, True
+    customPrMgr.Get5 "O. eiio?ie", True, asmMainQA, asmMainQA, True
     
     configurationNames = swModel.GetConfigurationNames
+    
+    For i = 0 To UBound(configurationNames)
+        Set config = swModel.GetConfigurationByName(configurationNames(i))
+        Set customPrMgr = config.CustomPropertyManager
+        
+        customPrMgr.Get5 "Eia eiio.", True, tempName, tempName, True
+        If (tempName = "") Then
+            customPrMgr.Get5 "Eia eiio. ", True, tempName, tempName, True
+        End If
+        asmCustomNames.Add tempName, configurationNames(i)
+    Next
     
     swView.SetVisible False, False
     Set swModel = swApp.ActivateDoc3(drwPath, False, 0, 0)
@@ -41,6 +57,11 @@ End Sub
 
 Public Function getName() As String
     getName = asmName
+    Exit Function
+End Function
+
+Public Function getConfName(key As String) As String
+    getConfName = CStr(asmCustomNames(key))
     Exit Function
 End Function
 
@@ -73,4 +94,5 @@ Public Function getMainQA() As String
     getMainQA = asmMainQA
     Exit Function
 End Function
+
 
